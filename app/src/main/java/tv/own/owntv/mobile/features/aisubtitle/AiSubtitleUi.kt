@@ -1,6 +1,7 @@
 // DO NOT EDIT — generated
 package tv.own.owntv.mobile.features.aisubtitle
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -345,8 +346,29 @@ fun AiSubtitleTimingCalibrationRow(
 ) {
     val config by controller.configStore.config.collectAsStateWithLifecycle()
     val palette = LocalStagePalette.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     val offsetMs = config.syncOffsetMs
     val offsetSec = kotlin.math.abs(offsetMs) / 1000f
+
+    val offsetText = when {
+        offsetMs == 0 -> stringResource(R.string.player_ai_subtitle_offset_zero)
+        offsetMs > 0 -> stringResource(R.string.player_ai_subtitle_offset_later, offsetSec)
+        else -> stringResource(R.string.player_ai_subtitle_offset_earlier, offsetSec)
+    }
+
+    val notifyChange: (Int) -> Unit = { newOffset ->
+        val sec = kotlin.math.abs(newOffset) / 1000f
+        val desc = when {
+            newOffset == 0 -> context.getString(R.string.player_ai_subtitle_offset_zero)
+            newOffset > 0 -> context.getString(R.string.player_ai_subtitle_offset_later, sec)
+            else -> context.getString(R.string.player_ai_subtitle_offset_earlier, sec)
+        }
+        Toast.makeText(
+            context,
+            context.getString(R.string.player_ai_subtitle_toast_offset, desc),
+            Toast.LENGTH_SHORT,
+        ).show()
+    }
 
     Column(
         modifier = modifier
@@ -356,15 +378,28 @@ fun AiSubtitleTimingCalibrationRow(
             .background(palette.cardSolid)
             .padding(12.dp)
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.player_ai_subtitle_timing_calibration),
+                color = palette.muted,
+                fontSize = 13.sp,
+            )
+            Text(
+                text = offsetText,
+                color = palette.text,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Spacer(Modifier.height(4.dp))
         Text(
-            text = when {
-                offsetMs == 0 -> stringResource(R.string.player_ai_subtitle_offset_zero)
-                offsetMs > 0 -> stringResource(R.string.player_ai_subtitle_offset_later, offsetSec)
-                else -> stringResource(R.string.player_ai_subtitle_offset_earlier, offsetSec)
-            },
-            color = palette.text,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
+            text = stringResource(R.string.player_ai_subtitle_timing_hint),
+            color = palette.muted,
+            fontSize = 11.sp,
         )
         Spacer(Modifier.height(8.dp))
         Row(
@@ -372,32 +407,47 @@ fun AiSubtitleTimingCalibrationRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             tv.own.owntv.mobile.ui.stage.StageButton(
-                onClick = { controller.configStore.adjustSyncOffset(-500) },
+                onClick = {
+                    val next = controller.adjustSyncOffset(-1000)
+                    notifyChange(next)
+                },
+                text = stringResource(R.string.player_ai_subtitle_advance_1s),
+                small = true,
+                modifier = Modifier.weight(1f),
+            )
+            tv.own.owntv.mobile.ui.stage.StageButton(
+                onClick = {
+                    val next = controller.adjustSyncOffset(-500)
+                    notifyChange(next)
+                },
                 text = stringResource(R.string.player_ai_subtitle_advance_500ms),
                 small = true,
                 modifier = Modifier.weight(1f),
             )
             tv.own.owntv.mobile.ui.stage.StageButton(
-                onClick = { controller.configStore.adjustSyncOffset(-100) },
-                text = stringResource(R.string.player_ai_subtitle_advance_100ms),
-                small = true,
-                modifier = Modifier.weight(1f),
-            )
-            tv.own.owntv.mobile.ui.stage.StageButton(
-                onClick = { controller.configStore.resetSyncOffset() },
-                text = stringResource(R.string.common_reset),
+                onClick = {
+                    val next = controller.resetSyncOffset()
+                    notifyChange(next)
+                },
+                text = stringResource(R.string.player_ai_subtitle_reset_0s),
                 small = true,
                 modifier = Modifier.weight(0.9f),
             )
             tv.own.owntv.mobile.ui.stage.StageButton(
-                onClick = { controller.configStore.adjustSyncOffset(100) },
-                text = stringResource(R.string.player_ai_subtitle_delay_100ms),
+                onClick = {
+                    val next = controller.adjustSyncOffset(500)
+                    notifyChange(next)
+                },
+                text = stringResource(R.string.player_ai_subtitle_delay_500ms),
                 small = true,
                 modifier = Modifier.weight(1f),
             )
             tv.own.owntv.mobile.ui.stage.StageButton(
-                onClick = { controller.configStore.adjustSyncOffset(500) },
-                text = stringResource(R.string.player_ai_subtitle_delay_500ms),
+                onClick = {
+                    val next = controller.adjustSyncOffset(1000)
+                    notifyChange(next)
+                },
+                text = stringResource(R.string.player_ai_subtitle_delay_1s),
                 small = true,
                 modifier = Modifier.weight(1f),
             )

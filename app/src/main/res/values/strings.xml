@@ -23,8 +23,11 @@
     <string name="player_ai_subtitle_offset_zero">0.0s (Normal)</string>
     <string name="player_ai_subtitle_offset_later">+%1$.1fs (Later)</string>
     <string name="player_ai_subtitle_offset_earlier">-%1$.1fs (Earlier)</string>
+    <string name="player_ai_subtitle_advance_1s">Earlier 1.0s</string>
     <string name="player_ai_subtitle_advance_500ms">Earlier 0.5s</string>
-    <string name="player_ai_subtitle_advance_100ms">Earlier 0.1s</string>
-    <string name="player_ai_subtitle_delay_100ms">Later 0.1s</string>
+    <string name="player_ai_subtitle_reset_0s">Reset 0s</string>
     <string name="player_ai_subtitle_delay_500ms">Later 0.5s</string>
+    <string name="player_ai_subtitle_delay_1s">Later 1.0s</string>
+    <string name="player_ai_subtitle_timing_hint">Tap Earlier if subtitles lag behind audio, Later if ahead</string>
+    <string name="player_ai_subtitle_toast_offset">Subtitle sync: %1$s</string>
 </resources>

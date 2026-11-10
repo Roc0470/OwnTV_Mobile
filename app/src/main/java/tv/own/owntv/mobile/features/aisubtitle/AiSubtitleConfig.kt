@@ -230,13 +230,20 @@ class AiSubtitleConfigStore(context: Context) {
     }
 
     /** 调整字幕同步偏移量（毫秒，正数延后，负数提前） */
-    fun adjustSyncOffset(deltaMs: Int) {
-        update { it.copy(syncOffsetMs = (it.syncOffsetMs + deltaMs).coerceIn(MIN_SYNC_OFFSET_MS, MAX_SYNC_OFFSET_MS)) }
+    fun adjustSyncOffset(deltaMs: Int): Int {
+        var result = 0
+        update {
+            val nextOffset = (it.syncOffsetMs + deltaMs).coerceIn(MIN_SYNC_OFFSET_MS, MAX_SYNC_OFFSET_MS)
+            result = nextOffset
+            it.copy(syncOffsetMs = nextOffset)
+        }
+        return result
     }
 
     /** 重置字幕同步偏移量至 0 毫秒 */
-    fun resetSyncOffset() {
+    fun resetSyncOffset(): Int {
         update { it.copy(syncOffsetMs = 0) }
+        return 0
     }
 
     /** 应用预设模板（保留已填写的 API Key） */
@@ -269,8 +276,8 @@ class AiSubtitleConfigStore(context: Context) {
 
         const val MIN_LEAD_SECONDS = 3
         const val MAX_LEAD_SECONDS = 12
-        const val MIN_SYNC_OFFSET_MS = -5000
-        const val MAX_SYNC_OFFSET_MS = 5000
+        const val MIN_SYNC_OFFSET_MS = -6000
+        const val MAX_SYNC_OFFSET_MS = 6000
         const val STEP_SYNC_OFFSET_MS = 500
     }
 }

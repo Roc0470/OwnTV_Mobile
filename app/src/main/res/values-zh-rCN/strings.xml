@@ -23,8 +23,11 @@
     <string name="player_ai_subtitle_offset_zero">0.0s (正常对齐)</string>
     <string name="player_ai_subtitle_offset_later">+%1$.1fs (字幕延后)</string>
     <string name="player_ai_subtitle_offset_earlier">-%1$.1fs (字幕提前)</string>
+    <string name="player_ai_subtitle_advance_1s">提前 1.0s</string>
     <string name="player_ai_subtitle_advance_500ms">提前 0.5s</string>
-    <string name="player_ai_subtitle_advance_100ms">提前 0.1s</string>
-    <string name="player_ai_subtitle_delay_100ms">延后 0.1s</string>
+    <string name="player_ai_subtitle_reset_0s">重置 0s</string>
     <string name="player_ai_subtitle_delay_500ms">延后 0.5s</string>
+    <string name="player_ai_subtitle_delay_1s">延后 1.0s</string>
+    <string name="player_ai_subtitle_timing_hint">字幕慢于声音向左调（提前），字幕快于声音向右调（延后）</string>
+    <string name="player_ai_subtitle_toast_offset">字幕同步调整为：%1$s</string>
 </resources>

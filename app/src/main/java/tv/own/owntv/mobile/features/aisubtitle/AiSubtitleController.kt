@@ -218,6 +218,56 @@ class AiSubtitleController(
         _state.value = AiSubtitleState.Off
     }
 
+    /**
+     * 调整字幕同步偏移量（毫秒，正数延后，负数提前），并立即触发重算对齐（决策一 A）
+     */
+    fun adjustSyncOffset(deltaMs: Int): Int {
+        val newOffset = configStore.adjustSyncOffset(deltaMs)
+        onSyncOffsetChanged(deltaMs, newOffset)
+        return newOffset
+    }
+
+    /**
+     * 重置字幕同步偏移量至 0 毫秒，并立即触发重算对齐
+     */
+    fun resetSyncOffset(): Int {
+        val newOffset = configStore.resetSyncOffset()
+        onSyncOffsetChanged(0, newOffset)
+        return newOffset
+    }
+
+    /**
+     * 当用户调整时钟偏移时即时重算响应（决策一 A）：
+     * - 点击【延后】：若当前字幕在新时间线上处于未来，立即平滑隐去退回待播池，到新时刻再准时弹出；
+     * - 点击【提前】：若待播池已有后续字幕，立即提前弹出上屏。
+     */
+    private fun onSyncOffsetChanged(deltaMs: Int, newOffsetMs: Int) {
+        val now = SystemClock.elapsedRealtime()
+        val cfg = configStore.config.value
+        val leadMs = cfg.leadSeconds * 1000L
+        val current = _activeCue.value
+
+        Log.i(TAG, "onSyncOffsetChanged: delta=${deltaMs}ms, newOffset=${newOffsetMs}ms, current=${current?.id}")
+
+        if (current != null) {
+            val targetDisplayTime = current.audioStartElapsedMs + leadMs + newOffsetMs
+            if (now < targetDisplayTime) {
+                // 延后操作使得当前字幕在新时间轴上未到展示时刻：立即撤回屏幕并退回待播缓冲池
+                Log.i(TAG, "Delay applied: cue ${current.id} recalled to pending pool, wait ${targetDisplayTime - now}ms")
+                synchronized(pendingCues) {
+                    if (pendingCues.none { it.id == current.id }) {
+                        pendingCues.addFirst(current)
+                    }
+                }
+                _activeCue.value = null
+                activeCueStartElapsedMs = 0L
+            }
+        }
+
+        // 立即唤醒一次轮询门禁：若为提前操作，缓冲池中符合新时间戳的字幕将瞬间弹出
+        tickCueDisplay()
+    }
+
     private var activeCueStartElapsedMs = 0L
     private var lastActivityElapsedMs = 0L
 
@@ -229,28 +279,7 @@ class AiSubtitleController(
         val isRunning = _state.value is AiSubtitleState.Running
         lastActivityElapsedMs = now
 
-        val current = _activeCue.value
-
-        // 1. 同一句的流式内容增量追加 (同一 Cue ID)
-        if (current != null && current.id == cue.id) {
-            _activeCue.value = cue
-            if (current.translatedText.isBlank() && cue.translatedText.isNotBlank()) {
-                activeCueStartElapsedMs = now // 中文译文刚出现，启动 1.8s 最小驻留保护倒计时
-            }
-        } else if (isRunning && now >= cue.audioStartElapsedMs + leadMs + syncOffsetMs) {
-            // 2. 跨句翻篇 (全新 Cue ID)：判断当前屏幕上的旧句是否需要最小驻留保护
-            val currentHasChinese = current != null && current.translatedText.isNotBlank()
-            val currentDisplayDuration = now - activeCueStartElapsedMs
-            if (currentHasChinese && currentDisplayDuration < MIN_TRANSLATION_DISPLAY_MS) {
-                // 当前中文在屏幕展示尚未满 1.8 秒：放入待展示队列缓冲，坚决不暴力强刷，防止中文一闪而过
-                // 留待 tickCueDisplay() 在满 1.8s 后平滑接替
-            } else {
-                // 已满足 1.8 秒保底阅读时间（或旧句无中文），立即平滑接替展示
-                _activeCue.value = cue
-                activeCueStartElapsedMs = if (cue.translatedText.isNotBlank()) now else 0L
-            }
-        }
-
+        // 1. 先加入或更新待播缓冲池 (pendingCues)
         synchronized(pendingCues) {
             val idx = pendingCues.indexOfFirst { it.id == cue.id }
             if (idx >= 0) {
@@ -265,6 +294,30 @@ class AiSubtitleController(
                 pendingCues.addLast(cue)
             }
         }
+
+        if (!isRunning) return
+
+        val current = _activeCue.value
+        val targetDisplayTime = cue.audioStartElapsedMs + leadMs + syncOffsetMs
+
+        // 2. 只有当时间真正到达允许显示时刻，才更新或上屏；未到时刻坚决留在队列等待门禁放行
+        if (now >= targetDisplayTime) {
+            if (current != null && current.id == cue.id) {
+                // 同一句的流式增量追加 (同一 Cue ID)
+                _activeCue.value = cue
+                if (current.translatedText.isBlank() && cue.translatedText.isNotBlank()) {
+                    activeCueStartElapsedMs = now // 中文译文刚出现，启动 1.8s 最小驻留保护倒计时
+                }
+            } else {
+                // 跨句翻篇 (全新 Cue ID)：判断当前屏幕上的旧句是否需要最小驻留保护
+                val currentHasChinese = current != null && current.translatedText.isNotBlank()
+                val currentDisplayDuration = now - activeCueStartElapsedMs
+                if (!currentHasChinese || currentDisplayDuration >= MIN_TRANSLATION_DISPLAY_MS) {
+                    _activeCue.value = cue
+                    activeCueStartElapsedMs = if (cue.translatedText.isNotBlank()) now else 0L
+                }
+            }
+        }
     }
 
     private fun tickCueDisplay() {
@@ -274,7 +327,22 @@ class AiSubtitleController(
         val syncOffsetMs = cfg.syncOffsetMs.toLong()
         val current = _activeCue.value
 
-        // 核心保护：若当前屏幕已有中文且展示还未满 1.8 秒，等待满足保底阅读时长后再翻篇
+        // 1. 若当前屏幕字幕因用户调大延后而变成“未到展示时刻”，立即撤回回退队列
+        if (current != null) {
+            val curTargetTime = current.audioStartElapsedMs + leadMs + syncOffsetMs
+            if (now < curTargetTime) {
+                synchronized(pendingCues) {
+                    if (pendingCues.none { it.id == current.id }) {
+                        pendingCues.addFirst(current)
+                    }
+                }
+                _activeCue.value = null
+                activeCueStartElapsedMs = 0L
+                return
+            }
+        }
+
+        // 2. 核心保护：若当前屏幕已有中文且展示还未满 1.8 秒，等待满足保底阅读时长后再翻篇
         val currentHasChinese = current != null && current.translatedText.isNotBlank()
         val currentDisplayDuration = now - activeCueStartElapsedMs
         val isLockedByMinDisplay = currentHasChinese && currentDisplayDuration < MIN_TRANSLATION_DISPLAY_MS
@@ -313,7 +381,7 @@ class AiSubtitleController(
             }
         }
 
-        // 静音与停顿消隐：距最后活动超过 2.8 秒且已满足 1.8 秒最小阅读时长，平滑消隐
+        // 3. 静音与停顿消隐：距最后活动超过 2.8 秒且已满足 1.8 秒最小阅读时长，平滑消隐
         if (current != null) {
             val quietDuration = now - lastActivityElapsedMs
             if (quietDuration > SILENCE_FADE_OUT_MS && !isLockedByMinDisplay) {
