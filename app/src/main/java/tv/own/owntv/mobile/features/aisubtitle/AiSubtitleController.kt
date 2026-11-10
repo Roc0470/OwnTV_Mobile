@@ -143,12 +143,29 @@ class AiSubtitleController(
         // 3. 启动主画面延迟直播倒计时（暂停主画面 leadSeconds 秒，攒出 AI 识别与翻译时间差）
         val leadSecs = cfg.leadSeconds.coerceIn(AiSubtitleConfigStore.MIN_LEAD_SECONDS, AiSubtitleConfigStore.MAX_LEAD_SECONDS)
         prepareJob = scope.launch {
+            pausedMainPlayerForLead = false
+
+            // 守护协程：在换台缓冲或准备期间，一旦检测到主播放器开始起播，立即将其按住暂停，确保攒足 leadSecs 提前量！
+            val keepPausedJob = launch {
+                playbackEngine.isPlaying.collect { playing ->
+                    if (playing) {
+                        runCatching {
+                            playbackEngine.togglePlayPause()
+                            pausedMainPlayerForLead = true
+                            Log.i(TAG, "Preparing: intercepted playing state, held main player in pause")
+                        }
+                    }
+                }
+            }
+
+            // 若当前主播放器已经在播放中，立即执行第一次暂停
             if (playbackEngine.isPlaying.value) {
                 runCatching {
                     playbackEngine.togglePlayPause()
                     pausedMainPlayerForLead = true
                 }
             }
+
             for (remaining in leadSecs downTo 1) {
                 _state.value = AiSubtitleState.Preparing(
                     secondsLeft = remaining,
@@ -156,8 +173,16 @@ class AiSubtitleController(
                 )
                 delay(1000L)
             }
-            if (pausedMainPlayerForLead && !playbackEngine.isPlaying.value) {
-                runCatching { playbackEngine.togglePlayPause() }
+
+            // 倒计时结束，取消暂停拦截守护协程
+            keepPausedJob.cancel()
+
+            // 倒计时结束，必须让主画面开始播放（若处于暂停状态，恢复播放）
+            if (!playbackEngine.isPlaying.value) {
+                runCatching {
+                    playbackEngine.togglePlayPause()
+                    Log.i(TAG, "Preparing completed: resumed main player playback")
+                }
             }
             pausedMainPlayerForLead = false
             _state.value = AiSubtitleState.Running()

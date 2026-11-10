@@ -276,8 +276,8 @@ class AiSubtitleConfigStore(context: Context) {
 
         const val MIN_LEAD_SECONDS = 3
         const val MAX_LEAD_SECONDS = 12
-        const val MIN_SYNC_OFFSET_MS = -6000
-        const val MAX_SYNC_OFFSET_MS = 6000
+        const val MIN_SYNC_OFFSET_MS = -8000
+        const val MAX_SYNC_OFFSET_MS = 8000
         const val STEP_SYNC_OFFSET_MS = 500
     }
 }

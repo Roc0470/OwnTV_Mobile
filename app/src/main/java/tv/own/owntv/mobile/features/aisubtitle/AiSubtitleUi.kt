@@ -356,6 +356,7 @@ fun AiSubtitleTimingCalibrationRow(
         else -> stringResource(R.string.player_ai_subtitle_offset_earlier, offsetSec)
     }
 
+    var lastToast: Toast? by remember { mutableStateOf(null) }
     val notifyChange: (Int) -> Unit = { newOffset ->
         val sec = kotlin.math.abs(newOffset) / 1000f
         val desc = when {
@@ -363,11 +364,14 @@ fun AiSubtitleTimingCalibrationRow(
             newOffset > 0 -> context.getString(R.string.player_ai_subtitle_offset_later, sec)
             else -> context.getString(R.string.player_ai_subtitle_offset_earlier, sec)
         }
-        Toast.makeText(
+        lastToast?.cancel()
+        val t = Toast.makeText(
             context,
             context.getString(R.string.player_ai_subtitle_toast_offset, desc),
             Toast.LENGTH_SHORT,
-        ).show()
+        )
+        t.show()
+        lastToast = t
     }
 
     Column(
