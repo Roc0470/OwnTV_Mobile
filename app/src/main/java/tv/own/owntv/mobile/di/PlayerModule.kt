@@ -89,4 +89,6 @@ val playerModule = module {
             }
         }
     }
+    // AI 实时字幕与延迟直播控制器
+    single { tv.own.owntv.mobile.features.aisubtitle.AiSubtitleController(androidContext(), get(), get()) }
 }

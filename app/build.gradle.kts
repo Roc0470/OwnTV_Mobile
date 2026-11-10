@@ -350,6 +350,9 @@ dependencies {
     // Image loading
     // Media3's SubtitleView, for the image subtitles the engine renders through ExoPlayer.
     implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.datasource.okhttp)
+    implementation(libs.okhttp)
 
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)

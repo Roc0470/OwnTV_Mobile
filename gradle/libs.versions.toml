@@ -31,6 +31,7 @@ coil = "3.6.2"
 # Media3 — only the subtitle view. The player itself is core's; this app draws the image
 # subtitles (PGS/VOBSUB/DVB) the engine hands to ExoPlayer, and nothing else from media3.
 media3 = "1.11.1"
+okhttp = "5.5.0"
 koin = "4.2.2"
 # Google Cast. Phone-only, and deliberately absent from the TV app's catalogue and from core: an
 # Android TV box IS the receiver, so a sender SDK there would be an app casting to itself.
@@ -76,6 +77,9 @@ owntvCore = "1.0.71"
 owntv-core = { group = "tv.own.owntv", name = "core", version.ref = "owntvCore" }
 owntv-player-core = { group = "tv.own.owntv", name = "player-core", version.ref = "owntvCore" }
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
+androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
+androidx-media3-datasource-okhttp = { group = "androidx.media3", name = "media3-datasource-okhttp", version.ref = "media3" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 
 # Core
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

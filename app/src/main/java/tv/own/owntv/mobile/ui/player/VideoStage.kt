@@ -199,6 +199,11 @@ fun VideoStage(
             )
         }
         if (!exoActive) SubtitleOverlay(player = player, modifier = viewModifier, sizeScale = subtitleScale)
+        // AI 实时翻译与延迟直播字幕叠加层（同时覆盖 ExoPlayer 与 mpv）
+        tv.own.owntv.mobile.features.aisubtitle.AiSubtitleOverlay(
+            modifier = viewModifier,
+            sizeScale = subtitleScale,
+        )
     }
 }
 

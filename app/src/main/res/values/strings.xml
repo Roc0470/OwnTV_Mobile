@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_ai_subtitle_section">AI LIVE SUBTITLE</string>
+    <string name="player_ai_subtitle_toggle_on">AI Live Subtitle (Delayed Live Sync)</string>
+    <string name="player_ai_subtitle_toggle_off">Turn off AI Live Subtitle</string>
+    <string name="player_ai_subtitle_settings">AI Subtitle Settings…</string>
+    <string name="player_ai_subtitle_preparing">AI Subtitle preparing · buffering audio, starting in %1$d s</string>
+    <string name="player_ai_subtitle_error_prefix">AI Subtitle: %1$s</string>
+    <string name="player_ai_subtitle_sheet_title">AI Subtitle Settings</string>
+    <string name="player_ai_subtitle_status_on">Running (delayed live sync)</string>
+    <string name="player_ai_subtitle_status_off">Disabled</string>
+    <string name="player_ai_subtitle_lead_seconds">Lead time (delayed live)</string>
+    <string name="player_ai_subtitle_seconds_unit">%1$d seconds</string>
+    <string name="player_ai_subtitle_show_original">Show original text</string>
+    <string name="player_ai_subtitle_font_scale">Subtitle font size</string>
+    <string name="player_ai_subtitle_provider_preset">Provider preset</string>
+    <string name="player_ai_subtitle_api_key">API Key</string>
+    <string name="player_ai_subtitle_api_key_hint">Enter or paste API Key</string>
+    <string name="player_ai_subtitle_base_url">API Base URL</string>
+    <string name="player_ai_subtitle_model_name">Model name</string>
+    <string name="player_ai_subtitle_target_lang">Target language</string>
+</resources>

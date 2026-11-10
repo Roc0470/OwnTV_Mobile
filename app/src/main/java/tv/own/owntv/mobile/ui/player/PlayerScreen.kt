@@ -423,6 +423,20 @@ fun PlayerScreen(
     // Full screen means full screen: no status bar, no navigation bar. The display is kept awake by
     // VideoStage, which knows whether there is a picture to stay awake for.
     //
+    // AI 实时字幕控制器生命周期联动：换台自动切流、退出播放器自动停止
+    val aiSubtitleController = org.koin.compose.koinInject<tv.own.owntv.mobile.features.aisubtitle.AiSubtitleController>()
+    val currentStreamUrl = channel?.streamUrl
+    LaunchedEffect(currentStreamUrl, activeEngine) {
+        if (!currentStreamUrl.isNullOrBlank()) {
+            aiSubtitleController.onStreamChanged(activeEngine, currentStreamUrl)
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            aiSubtitleController.stop()
+        }
+    }
+
     // This is also where the activity learns that the picture is on screen, which is the difference
     // between "home was pressed while watching" (Picture-in-Picture) and "home was pressed" (leave).
     DisposableEffect(activity) {
@@ -1004,6 +1018,7 @@ fun PlayerScreen(
             onTuneToNumber = if (showChannelNumbers) tuner::tuneByNumber else null,
             catchup = catchup,
             programmeEndMs = if (channel != null) nowNext?.now?.stopMs else null,
+            streamUrl = channel?.streamUrl,
             // Back out of a channel list returns to the categories, not out of the player's sheets.
             onDismiss = { if (open == PlayerSheet.CHANNELS) playerCategory = null else sheet = null },
         )

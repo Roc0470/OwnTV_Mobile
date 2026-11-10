@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_ai_subtitle_section">AI 实时翻译字幕</string>
+    <string name="player_ai_subtitle_toggle_on">开启 AI 实时字幕（延迟直播同步）</string>
+    <string name="player_ai_subtitle_toggle_off">关闭 AI 实时字幕</string>
+    <string name="player_ai_subtitle_settings">AI 字幕设置与配置…</string>
+    <string name="player_ai_subtitle_preparing">AI 字幕准备中 · 正在提前收听并翻译，约 %1$d 秒后开始播放</string>
+    <string name="player_ai_subtitle_error_prefix">AI 字幕提示：%1$s</string>
+    <string name="player_ai_subtitle_sheet_title">AI 实时字幕设置</string>
+    <string name="player_ai_subtitle_status_on">运行中（延迟直播同步）</string>
+    <string name="player_ai_subtitle_status_off">已关闭</string>
+    <string name="player_ai_subtitle_lead_seconds">提前收听秒数（延迟直播）</string>
+    <string name="player_ai_subtitle_seconds_unit">%1$d 秒</string>
+    <string name="player_ai_subtitle_show_original">显示识别原文（双语字幕）</string>
+    <string name="player_ai_subtitle_font_scale">字幕字号大小</string>
+    <string name="player_ai_subtitle_provider_preset">服务商一键预设</string>
+    <string name="player_ai_subtitle_api_key">API 密钥 (API Key)</string>
+    <string name="player_ai_subtitle_api_key_hint">输入或粘贴 API Key</string>
+    <string name="player_ai_subtitle_base_url">接口基础地址 (Base URL)</string>
+    <string name="player_ai_subtitle_model_name">模型名称 (Model)</string>
+    <string name="player_ai_subtitle_target_lang">目标翻译语言</string>
+</resources>

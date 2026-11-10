@@ -108,6 +108,7 @@ fun PlayerSheetHost(
     programmeEndMs: Long? = null,
     /** The category the channel list shows, for its header; null names it "Channels". */
     channelsTitle: String? = null,
+    streamUrl: String? = null,
 ) {
     when (sheet) {
         PlayerSheet.VOLUME -> VolumeSheet(player, onDismiss)
@@ -115,8 +116,15 @@ fun PlayerSheetHost(
         PlayerSheet.SUBTITLES -> SubtitleSheet(
             player = player,
             canAddSubtitles = canAddSubtitles,
+            streamUrl = streamUrl,
             onSearch = { onOpenSheet(PlayerSheet.SUBTITLE_SEARCH) },
+            onOpenAiSubtitleSettings = { onOpenSheet(PlayerSheet.AI_SUBTITLES) },
             onPickLocalSubtitle = onPickLocalSubtitle,
+            onDismiss = onDismiss,
+        )
+        PlayerSheet.AI_SUBTITLES -> tv.own.owntv.mobile.features.aisubtitle.AiSubtitleSettingsSheet(
+            player = player,
+            streamUrl = streamUrl,
             onDismiss = onDismiss,
         )
         PlayerSheet.SUBTITLE_SEARCH -> SubtitleSearchSheet(onDismiss)
@@ -190,13 +198,20 @@ private fun SliderRow(value: Float, label: String, onChange: (Float) -> Unit) {
 private fun SubtitleSheet(
     player: PlaybackEngine,
     canAddSubtitles: Boolean,
+    streamUrl: String? = null,
     onSearch: () -> Unit,
+    onOpenAiSubtitleSettings: () -> Unit,
     onPickLocalSubtitle: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val tracks = remember { player.textTracks() }
     val timing = remember { player.subtitleTimingAvailable() }
     val title = stringResource(R.string.player_subtitles)
+    val aiSubController = org.koin.compose.koinInject<tv.own.owntv.mobile.features.aisubtitle.AiSubtitleController>()
+    val aiSubState by aiSubController.state.collectAsStateWithLifecycle()
+    val aiSubEnabled = aiSubState !is tv.own.owntv.mobile.features.aisubtitle.AiSubtitleState.Off
+    val aiSubConfigured = aiSubController.configStore.config.collectAsStateWithLifecycle().value.isConfigured
+
     MobileBottomSheet(onDismissRequest = onDismiss, title = title) {
         StageSheetHeader(title)
         SheetScroll {
@@ -217,6 +232,26 @@ private fun SubtitleSheet(
                     checked = track.selected,
                 )
             }
+
+            // AI 实时翻译字幕模块入口
+            StageGroupLabel(stringResource(R.string.player_ai_subtitle_section))
+            StageMenuItem(
+                label = stringResource(if (aiSubEnabled) R.string.player_ai_subtitle_toggle_off else R.string.player_ai_subtitle_toggle_on),
+                checked = aiSubEnabled,
+                onClick = {
+                    if (!aiSubEnabled && !aiSubConfigured) {
+                        onOpenAiSubtitleSettings()
+                    } else {
+                        aiSubController.toggle(player, fallbackStreamUrl = streamUrl)
+                        onDismiss()
+                    }
+                },
+            )
+            StageMenuItem(
+                label = stringResource(R.string.player_ai_subtitle_settings),
+                icon = MobileIcons.Settings,
+                onClick = onOpenAiSubtitleSettings,
+            )
             if (canAddSubtitles) {
                 StageGroupLabel(stringResource(R.string.player_add_subtitles))
                 StageMenuItem(stringResource(R.string.player_search_subtitles), onClick = onSearch, icon = MobileIcons.Search)
