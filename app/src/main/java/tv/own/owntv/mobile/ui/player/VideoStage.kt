@@ -151,6 +151,11 @@ fun VideoStage(
                 val cues by liveExo.cues.collectAsStateWithLifecycle()
                 StyledSubtitleView(cues = cues, modifier = viewModifier)
             }
+            // AI 实时翻译与延迟直播字幕叠加层（Live ExoPlayer 模式）
+            tv.own.owntv.mobile.features.aisubtitle.AiSubtitleOverlay(
+                modifier = viewModifier,
+                sizeScale = subtitleScale,
+            )
             return@BoxWithConstraints
         }
         val surfaceResetToken by player.surfaceResetToken.collectAsStateWithLifecycle()
