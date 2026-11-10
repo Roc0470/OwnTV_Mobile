@@ -307,6 +307,10 @@ fun AiSubtitleSettingsSheet(
                 )
             }
 
+            // 字幕时序微调 (同步校准：前进/延后)
+            StageGroupLabel(stringResource(R.string.player_ai_subtitle_timing_calibration))
+            AiSubtitleTimingCalibrationRow(controller = controller)
+
             // 显示选项
             StageGroupLabel(stringResource(R.string.player_subtitles))
             StageMenuItem(
@@ -327,6 +331,76 @@ fun AiSubtitleSettingsSheet(
                     },
                 )
             }
+        }
+    }
+}
+
+/**
+ * AI 实时字幕时序快慢微调组件 ([AiSubtitleTimingCalibrationRow])。
+ */
+@Composable
+fun AiSubtitleTimingCalibrationRow(
+    controller: AiSubtitleController,
+    modifier: Modifier = Modifier,
+) {
+    val config by controller.configStore.config.collectAsStateWithLifecycle()
+    val palette = LocalStagePalette.current
+    val offsetMs = config.syncOffsetMs
+    val offsetSec = kotlin.math.abs(offsetMs) / 1000f
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(palette.cardSolid)
+            .padding(12.dp)
+    ) {
+        Text(
+            text = when {
+                offsetMs == 0 -> stringResource(R.string.player_ai_subtitle_offset_zero)
+                offsetMs > 0 -> stringResource(R.string.player_ai_subtitle_offset_later, offsetSec)
+                else -> stringResource(R.string.player_ai_subtitle_offset_earlier, offsetSec)
+            },
+            color = palette.text,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            tv.own.owntv.mobile.ui.stage.StageButton(
+                onClick = { controller.configStore.adjustSyncOffset(-500) },
+                text = stringResource(R.string.player_ai_subtitle_advance_500ms),
+                small = true,
+                modifier = Modifier.weight(1f),
+            )
+            tv.own.owntv.mobile.ui.stage.StageButton(
+                onClick = { controller.configStore.adjustSyncOffset(-100) },
+                text = stringResource(R.string.player_ai_subtitle_advance_100ms),
+                small = true,
+                modifier = Modifier.weight(1f),
+            )
+            tv.own.owntv.mobile.ui.stage.StageButton(
+                onClick = { controller.configStore.resetSyncOffset() },
+                text = stringResource(R.string.common_reset),
+                small = true,
+                modifier = Modifier.weight(0.9f),
+            )
+            tv.own.owntv.mobile.ui.stage.StageButton(
+                onClick = { controller.configStore.adjustSyncOffset(100) },
+                text = stringResource(R.string.player_ai_subtitle_delay_100ms),
+                small = true,
+                modifier = Modifier.weight(1f),
+            )
+            tv.own.owntv.mobile.ui.stage.StageButton(
+                onClick = { controller.configStore.adjustSyncOffset(500) },
+                text = stringResource(R.string.player_ai_subtitle_delay_500ms),
+                small = true,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }

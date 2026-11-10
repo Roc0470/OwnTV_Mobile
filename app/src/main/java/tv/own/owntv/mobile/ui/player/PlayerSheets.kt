@@ -252,6 +252,10 @@ private fun SubtitleSheet(
                 icon = MobileIcons.Settings,
                 onClick = onOpenAiSubtitleSettings,
             )
+            if (aiSubEnabled) {
+                StageGroupLabel(stringResource(R.string.player_ai_subtitle_timing_calibration))
+                tv.own.owntv.mobile.features.aisubtitle.AiSubtitleTimingCalibrationRow(controller = aiSubController)
+            }
             if (canAddSubtitles) {
                 StageGroupLabel(stringResource(R.string.player_add_subtitles))
                 StageMenuItem(stringResource(R.string.player_search_subtitles), onClick = onSearch, icon = MobileIcons.Search)

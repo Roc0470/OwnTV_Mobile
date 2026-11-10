@@ -1,4 +1,4 @@
-﻿// DO NOT EDIT — generated
+// DO NOT EDIT — generated
 package tv.own.owntv.mobile.features.aisubtitle
 
 import android.content.Context
@@ -144,6 +144,8 @@ data class AiSubtitleConfig(
     val showOriginal: Boolean = true,
     /** 字幕字号缩放比例（0.8f ~ 1.6f，默认 1.0f） */
     val fontSizeScale: Float = 1.0f,
+    /** 字幕时序快慢微调偏移量（毫秒，-5000ms ~ +5000ms，默认 0ms；负数表示字幕提前，正数表示字幕延后） */
+    val syncOffsetMs: Int = 0,
     /** 设备唯一标识（用于 tvgo 协议握手） */
     val deviceId: String = "",
 ) {
@@ -196,6 +198,7 @@ class AiSubtitleConfigStore(context: Context) {
             leadSeconds = prefs.getInt(KEY_LEAD_SECONDS, 5).coerceIn(MIN_LEAD_SECONDS, MAX_LEAD_SECONDS),
             showOriginal = prefs.getBoolean(KEY_SHOW_ORIGINAL, true),
             fontSizeScale = prefs.getFloat(KEY_FONT_SCALE, 1.0f).coerceIn(0.75f, 1.6f),
+            syncOffsetMs = prefs.getInt(KEY_SYNC_OFFSET, 0).coerceIn(MIN_SYNC_OFFSET_MS, MAX_SYNC_OFFSET_MS),
             deviceId = devId,
         )
     }
@@ -206,6 +209,7 @@ class AiSubtitleConfigStore(context: Context) {
             it.copy(
                 leadSeconds = it.leadSeconds.coerceIn(MIN_LEAD_SECONDS, MAX_LEAD_SECONDS),
                 fontSizeScale = it.fontSizeScale.coerceIn(0.75f, 1.6f),
+                syncOffsetMs = it.syncOffsetMs.coerceIn(MIN_SYNC_OFFSET_MS, MAX_SYNC_OFFSET_MS),
             )
         }
         prefs.edit()
@@ -220,8 +224,19 @@ class AiSubtitleConfigStore(context: Context) {
             .putInt(KEY_LEAD_SECONDS, next.leadSeconds)
             .putBoolean(KEY_SHOW_ORIGINAL, next.showOriginal)
             .putFloat(KEY_FONT_SCALE, next.fontSizeScale)
+            .putInt(KEY_SYNC_OFFSET, next.syncOffsetMs)
             .apply()
         _config.value = next
+    }
+
+    /** 调整字幕同步偏移量（毫秒，正数延后，负数提前） */
+    fun adjustSyncOffset(deltaMs: Int) {
+        update { it.copy(syncOffsetMs = (it.syncOffsetMs + deltaMs).coerceIn(MIN_SYNC_OFFSET_MS, MAX_SYNC_OFFSET_MS)) }
+    }
+
+    /** 重置字幕同步偏移量至 0 毫秒 */
+    fun resetSyncOffset() {
+        update { it.copy(syncOffsetMs = 0) }
     }
 
     /** 应用预设模板（保留已填写的 API Key） */
@@ -249,9 +264,13 @@ class AiSubtitleConfigStore(context: Context) {
         private const val KEY_LEAD_SECONDS = "lead_seconds"
         private const val KEY_SHOW_ORIGINAL = "show_original"
         private const val KEY_FONT_SCALE = "font_scale"
+        private const val KEY_SYNC_OFFSET = "sync_offset_ms"
         private const val KEY_DEVICE_ID = "device_id"
 
         const val MIN_LEAD_SECONDS = 3
         const val MAX_LEAD_SECONDS = 12
+        const val MIN_SYNC_OFFSET_MS = -5000
+        const val MAX_SYNC_OFFSET_MS = 5000
+        const val STEP_SYNC_OFFSET_MS = 500
     }
 }

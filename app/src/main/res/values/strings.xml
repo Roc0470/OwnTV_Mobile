@@ -19,4 +19,12 @@
     <string name="player_ai_subtitle_base_url">API Base URL</string>
     <string name="player_ai_subtitle_model_name">Model name</string>
     <string name="player_ai_subtitle_target_lang">Target language</string>
+    <string name="player_ai_subtitle_timing_calibration">Subtitle sync offset</string>
+    <string name="player_ai_subtitle_offset_zero">0.0s (Normal)</string>
+    <string name="player_ai_subtitle_offset_later">+%1$.1fs (Later)</string>
+    <string name="player_ai_subtitle_offset_earlier">-%1$.1fs (Earlier)</string>
+    <string name="player_ai_subtitle_advance_500ms">Earlier 0.5s</string>
+    <string name="player_ai_subtitle_advance_100ms">Earlier 0.1s</string>
+    <string name="player_ai_subtitle_delay_100ms">Later 0.1s</string>
+    <string name="player_ai_subtitle_delay_500ms">Later 0.5s</string>
 </resources>

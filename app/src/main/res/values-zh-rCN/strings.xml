@@ -19,4 +19,12 @@
     <string name="player_ai_subtitle_base_url">接口基础地址 (Base URL)</string>
     <string name="player_ai_subtitle_model_name">模型名称 (Model)</string>
     <string name="player_ai_subtitle_target_lang">目标翻译语言</string>
+    <string name="player_ai_subtitle_timing_calibration">字幕时序微调 (同步校准)</string>
+    <string name="player_ai_subtitle_offset_zero">0.0s (正常对齐)</string>
+    <string name="player_ai_subtitle_offset_later">+%1$.1fs (字幕延后)</string>
+    <string name="player_ai_subtitle_offset_earlier">-%1$.1fs (字幕提前)</string>
+    <string name="player_ai_subtitle_advance_500ms">提前 0.5s</string>
+    <string name="player_ai_subtitle_advance_100ms">提前 0.1s</string>
+    <string name="player_ai_subtitle_delay_100ms">延后 0.1s</string>
+    <string name="player_ai_subtitle_delay_500ms">延后 0.5s</string>
 </resources>
