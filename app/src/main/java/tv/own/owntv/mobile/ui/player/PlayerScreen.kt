@@ -426,9 +426,13 @@ fun PlayerScreen(
     // AI 实时字幕控制器生命周期联动：换台自动切流、退出播放器自动停止
     val aiSubtitleController = org.koin.compose.koinInject<tv.own.owntv.mobile.features.aisubtitle.AiSubtitleController>()
     val currentStreamUrl = channel?.streamUrl
-    LaunchedEffect(currentStreamUrl, activeEngine) {
+    val channelHeaders = channel?.httpHeaders
+    val headersMap = remember(channelHeaders) {
+        channelHeaders?.let { tv.own.owntv.core.network.StreamHeaders.decode(it) }
+    }
+    LaunchedEffect(currentStreamUrl, activeEngine, headersMap) {
         if (!currentStreamUrl.isNullOrBlank()) {
-            aiSubtitleController.onStreamChanged(activeEngine, currentStreamUrl)
+            aiSubtitleController.onStreamChanged(activeEngine, currentStreamUrl, headersMap)
         }
     }
     DisposableEffect(Unit) {

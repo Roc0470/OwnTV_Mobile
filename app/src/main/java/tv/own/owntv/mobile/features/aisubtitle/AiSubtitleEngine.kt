@@ -78,11 +78,22 @@ class OpenAiCompatEngine(
     private val recentContext = ArrayDeque<String>(3)
 
     private val httpClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
-            .build()
+        val base = runCatching {
+            org.koin.core.context.GlobalContext.get().get<OkHttpClient>()
+        }.getOrNull()
+        if (base != null) {
+            base.newBuilder()
+                .connectTimeout(12, TimeUnit.SECONDS)
+                .writeTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(20, TimeUnit.SECONDS)
+                .build()
+        } else {
+            OkHttpClient.Builder()
+                .connectTimeout(12, TimeUnit.SECONDS)
+                .writeTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(20, TimeUnit.SECONDS)
+                .build()
+        }
     }
 
     override fun start() {
@@ -426,11 +437,22 @@ class RealtimeWsEngine(
     private var activeCueId = "rt-1"
 
     private val wsClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(0, TimeUnit.MILLISECONDS)
-            .pingInterval(15, TimeUnit.SECONDS)
-            .build()
+        val base = runCatching {
+            org.koin.core.context.GlobalContext.get().get<OkHttpClient>()
+        }.getOrNull()
+        if (base != null) {
+            base.newBuilder()
+                .connectTimeout(12, TimeUnit.SECONDS)
+                .readTimeout(0, TimeUnit.MILLISECONDS)
+                .pingInterval(15, TimeUnit.SECONDS)
+                .build()
+        } else {
+            OkHttpClient.Builder()
+                .connectTimeout(12, TimeUnit.SECONDS)
+                .readTimeout(0, TimeUnit.MILLISECONDS)
+                .pingInterval(15, TimeUnit.SECONDS)
+                .build()
+        }
     }
 
     override fun start() {

@@ -321,6 +321,19 @@ fun AiSubtitleSettingsSheet(
                 }
             }
 
+            // 工作模式
+            StageGroupLabel("工作模式与单连接保护")
+            AiSubtitleCaptureMode.entries.forEach { mode ->
+                StageMenuItem(
+                    label = mode.title,
+                    value = mode.description,
+                    checked = config.captureMode == mode,
+                    onClick = {
+                        controller.configStore.update { it.copy(captureMode = mode) }
+                    },
+                )
+            }
+
             // 提前收听延迟直播秒数
             StageGroupLabel(stringResource(R.string.player_ai_subtitle_lead_seconds))
             listOf(3, 5, 8, 10).forEach { sec ->
@@ -381,18 +394,19 @@ fun AiSubtitleTimingCalibrationRow(
         else -> stringResource(R.string.player_ai_subtitle_offset_earlier, offsetSec)
     }
 
+    val resources = androidx.compose.ui.platform.LocalResources.current
     var lastToast: Toast? by remember { mutableStateOf(null) }
     val notifyChange: (Int) -> Unit = { newOffset ->
         val sec = kotlin.math.abs(newOffset) / 1000f
         val desc = when {
-            newOffset == 0 -> context.getString(R.string.player_ai_subtitle_offset_zero)
-            newOffset > 0 -> context.getString(R.string.player_ai_subtitle_offset_later, sec)
-            else -> context.getString(R.string.player_ai_subtitle_offset_earlier, sec)
+            newOffset == 0 -> resources.getString(R.string.player_ai_subtitle_offset_zero)
+            newOffset > 0 -> resources.getString(R.string.player_ai_subtitle_offset_later, sec)
+            else -> resources.getString(R.string.player_ai_subtitle_offset_earlier, sec)
         }
         lastToast?.cancel()
         val t = Toast.makeText(
             context,
-            context.getString(R.string.player_ai_subtitle_toast_offset, desc),
+            resources.getString(R.string.player_ai_subtitle_toast_offset, desc),
             Toast.LENGTH_SHORT,
         )
         t.show()
@@ -430,6 +444,15 @@ fun AiSubtitleTimingCalibrationRow(
             color = palette.muted,
             fontSize = 11.sp,
         )
+        if (controller.isDirectTapMode) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "提示：当前处于直采保活模式（主画面无延迟），大模型同传翻译约有 1.5 秒网络推理耗时，无法提前未生成的云端译文。如需音画精准对齐，请在上方工作模式中开启【强制延迟探路】模式",
+                color = palette.muted,
+                fontSize = 11.5.sp,
+                lineHeight = 15.sp,
+            )
+        }
         Spacer(Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
