@@ -2,7 +2,7 @@
 # --- Build toolchain ---
 # Kept in lockstep with OwnTV_Core and the TV app: all three compile the same core sources through a
 # composite build during local development, and Gradle cannot mix two AGP/Kotlin versions there.
-agp = "9.4.0"
+agp = "9.5.1"
 kotlin = "2.4.20"
 
 # --- AndroidX / Jetpack ---
