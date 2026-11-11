@@ -105,6 +105,31 @@ fun AiSubtitleOverlay(
                     }
                 }
             }
+            is AiSubtitleState.Running -> {
+                if (!inPip && s.statusHint.isNotBlank() && (cue == null || s.statusHint.contains("缓冲"))) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 16.dp * sizeScale)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color(0xB30D1821))
+                            .padding(horizontal = 14.dp * sizeScale, vertical = 6.dp * sizeScale),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = s.statusHint,
+                            style = TextStyle(
+                                color = Color.White.copy(alpha = 0.92f),
+                                fontSize = (13 * sizeScale).sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
             is AiSubtitleState.Error -> {
                 if (!inPip) {
                     Row(
@@ -456,5 +481,22 @@ fun AiSubtitleTimingCalibrationRow(
                 modifier = Modifier.weight(1f),
             )
         }
+        Spacer(Modifier.height(8.dp))
+        tv.own.owntv.mobile.ui.stage.StageButton(
+            onClick = {
+                controller.syncToLiveNow()
+                lastToast?.cancel()
+                val t = Toast.makeText(
+                    context,
+                    "已立即对齐至当前最新语音",
+                    Toast.LENGTH_SHORT,
+                )
+                t.show()
+                lastToast = t
+            },
+            text = "立即对齐当前语音（消除卡顿抢跑）",
+            small = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }

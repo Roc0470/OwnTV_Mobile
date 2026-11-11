@@ -280,6 +280,9 @@ private fun SubtitleSheet(
 @Composable
 private fun SubtitleTimingRow(player: PlaybackEngine) {
     val delay by player.subDelayMs.collectAsStateWithLifecycle()
+    val aiSubController = org.koin.compose.koinInject<tv.own.owntv.mobile.features.aisubtitle.AiSubtitleController>()
+    val aiSubState by aiSubController.state.collectAsStateWithLifecycle()
+    val aiSubEnabled = aiSubState !is tv.own.owntv.mobile.features.aisubtitle.AiSubtitleState.Off
     val palette = LocalStagePalette.current
     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
         Text(
@@ -305,11 +308,11 @@ private fun SubtitleTimingRow(player: PlaybackEngine) {
             Modifier.padding(top = 8.dp).horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StageButton(onClick = { player.adjustSubtitleDelay(-500) }, text = stringResource(R.string.player_subtitle_delay_negative, 0.5), small = true)
-            StageButton(onClick = { player.adjustSubtitleDelay(-100) }, text = stringResource(R.string.player_subtitle_delay_negative, 0.1), small = true)
-            StageButton(onClick = { player.resetSubtitleDelay() }, text = stringResource(R.string.common_reset), small = true)
-            StageButton(onClick = { player.adjustSubtitleDelay(100) }, text = stringResource(R.string.player_subtitle_delay_positive, 0.1), small = true)
-            StageButton(onClick = { player.adjustSubtitleDelay(500) }, text = stringResource(R.string.player_subtitle_delay_positive, 0.5), small = true)
+            StageButton(onClick = { player.adjustSubtitleDelay(-500); if (aiSubEnabled) aiSubController.adjustSyncOffset(-500) }, text = stringResource(R.string.player_subtitle_delay_negative, 0.5), small = true)
+            StageButton(onClick = { player.adjustSubtitleDelay(-100); if (aiSubEnabled) aiSubController.adjustSyncOffset(-100) }, text = stringResource(R.string.player_subtitle_delay_negative, 0.1), small = true)
+            StageButton(onClick = { player.resetSubtitleDelay(); if (aiSubEnabled) aiSubController.resetSyncOffset() }, text = stringResource(R.string.common_reset), small = true)
+            StageButton(onClick = { player.adjustSubtitleDelay(100); if (aiSubEnabled) aiSubController.adjustSyncOffset(100) }, text = stringResource(R.string.player_subtitle_delay_positive, 0.1), small = true)
+            StageButton(onClick = { player.adjustSubtitleDelay(500); if (aiSubEnabled) aiSubController.adjustSyncOffset(500) }, text = stringResource(R.string.player_subtitle_delay_positive, 0.5), small = true)
         }
     }
 }

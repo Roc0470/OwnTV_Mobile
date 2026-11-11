@@ -144,7 +144,7 @@ data class AiSubtitleConfig(
     val showOriginal: Boolean = true,
     /** 字幕字号缩放比例（0.8f ~ 1.6f，默认 1.0f） */
     val fontSizeScale: Float = 1.0f,
-    /** 字幕时序快慢微调偏移量（毫秒，-5000ms ~ +5000ms，默认 0ms；负数表示字幕提前，正数表示字幕延后） */
+    /** 字幕时序快慢微调偏移量（毫秒，-10000ms ~ +15000ms，默认 0ms；负数表示字幕提前，正数表示字幕延后，单次播放会话级生效） */
     val syncOffsetMs: Int = 0,
     /** 设备唯一标识（用于 tvgo 协议握手） */
     val deviceId: String = "",
@@ -198,7 +198,7 @@ class AiSubtitleConfigStore(context: Context) {
             leadSeconds = prefs.getInt(KEY_LEAD_SECONDS, 5).coerceIn(MIN_LEAD_SECONDS, MAX_LEAD_SECONDS),
             showOriginal = prefs.getBoolean(KEY_SHOW_ORIGINAL, true),
             fontSizeScale = prefs.getFloat(KEY_FONT_SCALE, 1.0f).coerceIn(0.75f, 1.6f),
-            syncOffsetMs = prefs.getInt(KEY_SYNC_OFFSET, 0).coerceIn(MIN_SYNC_OFFSET_MS, MAX_SYNC_OFFSET_MS),
+            syncOffsetMs = 0, // 单次播放会话级生效，启动与换台默认归零
             deviceId = devId,
         )
     }
@@ -276,8 +276,8 @@ class AiSubtitleConfigStore(context: Context) {
 
         const val MIN_LEAD_SECONDS = 3
         const val MAX_LEAD_SECONDS = 12
-        const val MIN_SYNC_OFFSET_MS = -8000
-        const val MAX_SYNC_OFFSET_MS = 8000
+        const val MIN_SYNC_OFFSET_MS = -10000
+        const val MAX_SYNC_OFFSET_MS = 15000
         const val STEP_SYNC_OFFSET_MS = 500
     }
 }
