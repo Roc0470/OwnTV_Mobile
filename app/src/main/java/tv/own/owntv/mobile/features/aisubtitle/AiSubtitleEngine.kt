@@ -639,7 +639,7 @@ class RealtimeWsEngine(
         if (now - lastActivityOrCommitMs > 45_000L) {
             lastActivityOrCommitMs = now
             Log.i(TAG, "Proactive session refresh at 45s to avoid Bailian 60s response stream timeout")
-            if (partialTranslated.isNotEmpty() || partialOriginal.isNotEmpty()) {
+            if (partialTranslated.isNotEmpty() || committedOriginal.isNotEmpty() || currentTurnOriginal.isNotEmpty()) {
                 finalizeCurrentSentence()
             }
             scheduleReconnect(100L)
