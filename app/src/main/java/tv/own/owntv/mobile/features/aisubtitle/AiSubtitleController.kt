@@ -533,7 +533,12 @@ class AiSubtitleController(
 
         val currentHasChinese = current != null && current.translatedText.isNotBlank()
         val currentDisplayDuration = now - activeCueStartElapsedMs
-        val isLockedByMinDisplay = currentHasChinese && currentDisplayDuration < MIN_TRANSLATION_DISPLAY_MS
+        val effectiveMinHoldMs = if (targetCue != null && current != null && targetCue.id != current.id && targetCue.translatedText.length >= 8) {
+            ACTIVE_NEXT_PARAGRAPH_HOLD_MS
+        } else {
+            MIN_TRANSLATION_DISPLAY_MS
+        }
+        val isLockedByMinDisplay = currentHasChinese && currentDisplayDuration < effectiveMinHoldMs
 
         if (!isLockedByMinDisplay && targetCue != null) {
             if (current == null || targetCue.id != current.id) {
@@ -575,15 +580,17 @@ class AiSubtitleController(
 
     companion object {
         private const val TAG = "AiSubtitleController"
-        /** 时间轴环形缓冲区最大保留条数（约覆盖 60 秒历史与待播字幕） */
+        /** 时间轴环形缓冲区最大保留条数（覆盖 60 秒历史与待播长句字幕） */
         private const val MAX_TIMELINE_CUES = 60
         /** 历史字幕回溯保留时长（60 秒） */
         private const val HISTORY_WINDOW_MS = 60_000L
-        /** 单条字幕在时间轴上的最大有效驻留跨度（10 秒） */
-        private const val MAX_CUE_LIFETIME_MS = 10_000L
-        /** 中文译文保底安全阅读时长，彻底杜绝快语速下一闪而过 */
-        private const val MIN_TRANSLATION_DISPLAY_MS = 1800L
-        /** 静音停顿后平滑消隐时间（8.5 秒，覆盖句间正常同传推理间隔） */
-        private const val SILENCE_FADE_OUT_MS = 8500L
+        /** 单条长句字幕在时间轴上的最大有效驻留跨度（14 秒） */
+        private const val MAX_CUE_LIFETIME_MS = 14_000L
+        /** 大段长句译文标准保底阅读驻留时长（4.5 秒） */
+        private const val MIN_TRANSLATION_DISPLAY_MS = 4500L
+        /** 当下一大段长句已累积满 8 字时的平滑让位驻留时长（2.8 秒） */
+        private const val ACTIVE_NEXT_PARAGRAPH_HOLD_MS = 2800L
+        /** 静音停顿后平滑消隐时间（10.0 秒，防止句间或段落停顿闪烁） */
+        private const val SILENCE_FADE_OUT_MS = 10_000L
     }
 }

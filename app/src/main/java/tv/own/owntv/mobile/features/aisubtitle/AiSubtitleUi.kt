@@ -176,7 +176,7 @@ fun AiSubtitleOverlay(
                 if (config.showOriginal && active.originalText.isNotBlank() && !inPip) {
                     Text(
                         text = active.originalText,
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                         style = TextStyle(
@@ -193,15 +193,17 @@ fun AiSubtitleOverlay(
                     }
                 }
                 if (active.translatedText.isNotBlank()) {
+                    val lengthFactor = if (active.translatedText.length > 26 && !inPip) 0.90f else 1.0f
+                    val effScale = scale * lengthFactor
                     Text(
                         text = active.translatedText,
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                         style = TextStyle(
                             color = Color.White,
-                            fontSize = (if (inPip) 13f else 18f * scale).sp,
-                            lineHeight = (if (inPip) 16f else 24f * scale).sp,
+                            fontSize = (if (inPip) 13f else 18f * effScale).sp,
+                            lineHeight = (if (inPip) 16f else 24f * effScale).sp,
                             fontFamily = FontFamily.SansSerif,
                             fontWeight = FontWeight.SemiBold,
                             shadow = Shadow(color = Color.Black, offset = Offset(0f, 1.5f), blurRadius = 4f),

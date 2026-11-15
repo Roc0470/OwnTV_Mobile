@@ -7,6 +7,20 @@
 > Issue numbers that are part of a title are fine; explanatory parentheticals are not. The detail —
 > what, why, files and verification — belongs in the commit message, never here.
 
+## v1.2.0-ai — 2026-11-15
+
+### New features
+- **🧠 AI Live Subtitle: port full AI real-time translation & delayed live subtitle system to phone and tablet**
+- **📝 AI Live Subtitle: paragraph-level long subtitle streaming mode (22–42 chars, up to 3 lines) with adaptive font scaling**
+- **⏱️ AI Live Subtitle: 60-second audio PTS timeline synchronization, buffering clock freeze and touch-friendly sync offset calibration (-10s to +15s)**
+- **🔌 AI Live Subtitle: three capture modes — Auto Adaptive, Standalone Lead Scout (delayed live) and Direct Tap (single-connection anti-kick)**
+- **🌐 AI Live Subtitle: built-in presets for Alibaba Bailian (`qwen3.8-livetranslate-flash-realtime`), OpenAI, Gemini, Zhipu GLM and TVGO**
+
+### Fixes
+- **🔊 AI Live Subtitle: mount `AiSubtitleOverlay` in live ExoPlayer branch and attach `TapForwardingAudioSink` for zero-extra-connection PCM capture**
+- **⏸️ AI Live Subtitle: hold main player paused during channel switch preparation in standalone scout mode to prevent lead lag**
+- **🌐 AI Live Subtitle: inherit `StreamingHttpClient` proxy/headers and add single-session guard during live playback**
+
 ## v1.1.2 — 2026-11-09
 
 ### New features

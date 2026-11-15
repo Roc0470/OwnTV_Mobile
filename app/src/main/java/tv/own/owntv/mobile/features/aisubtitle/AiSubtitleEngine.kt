@@ -431,10 +431,22 @@ class RealtimeWsEngine(
     /** 当前短句是否已锁定语音起点 PTS */
     @Volatile private var hasSpeechAnchor = false
 
-    private val partialOriginal = StringBuilder()
+    private val committedOriginal = StringBuilder()
+    private val currentTurnOriginal = StringBuilder()
     private val partialTranslated = StringBuilder()
     private val cueCounter = AtomicLong(1L)
     private var activeCueId = "rt-1"
+    private var lastDeltaElapsedMs: Long = 0L
+
+    private fun buildFullOriginal(): String {
+        val a = committedOriginal.toString().trim()
+        val b = currentTurnOriginal.toString().trim()
+        return when {
+            a.isEmpty() -> b
+            b.isEmpty() -> a
+            else -> "$a $b"
+        }
+    }
 
     private val wsClient: OkHttpClient by lazy {
         val base = runCatching {
@@ -666,7 +678,7 @@ class RealtimeWsEngine(
                 }
                 "input_audio_buffer.speech_started" -> {
                     val audioStartMs = evt.optLong("audio_start_ms", -1L)
-                    if (partialTranslated.isEmpty() && partialOriginal.isEmpty()) {
+                    if (partialTranslated.isEmpty() && committedOriginal.isEmpty() && currentTurnOriginal.isEmpty()) {
                         hasSpeechAnchor = false
                         ensureSpeechAnchor(audioStartMs)
                     }
@@ -677,7 +689,7 @@ class RealtimeWsEngine(
                 }
                 "response.created" -> {
                     lastActivityOrCommitMs = SystemClock.elapsedRealtime()
-                    if (partialTranslated.isNotEmpty()) {
+                    if (shouldFinalizeOnBoundary(partialTranslated.toString())) {
                         finalizeCurrentSentence()
                     }
                     Log.i(TAG, "Server event: response.created")
@@ -686,7 +698,7 @@ class RealtimeWsEngine(
                     val delta = evt.optString("delta", "")
                     if (delta.isNotEmpty()) {
                         ensureSpeechAnchor()
-                        partialOriginal.append(delta)
+                        currentTurnOriginal.append(delta)
                         emitCurrentCue(isPartial = true)
                     }
                 }
@@ -694,26 +706,34 @@ class RealtimeWsEngine(
                     val full = (evt.optString("text", "") + evt.optString("stash", "")).trim()
                     if (full.isNotEmpty()) {
                         ensureSpeechAnchor()
-                        partialOriginal.setLength(0)
-                        partialOriginal.append(full)
+                        currentTurnOriginal.setLength(0)
+                        currentTurnOriginal.append(full)
                         emitCurrentCue(isPartial = true)
                     }
                 }
                 "conversation.item.input_audio_transcription.completed" -> {
-                    val transcript = evt.optString("transcript", "").ifBlank { evt.optString("text", "") }
-                    Log.i(TAG, "ASR completed [$activeCueId]: ${transcript.trim()}")
-                    if (transcript.isNotBlank() && partialTranslated.isNotEmpty()) {
-                        partialOriginal.setLength(0)
-                        partialOriginal.append(transcript.trim())
-                        emitCurrentCue(isPartial = true)
+                    val transcript = evt.optString("transcript", "").ifBlank { evt.optString("text", "") }.trim()
+                    Log.i(TAG, "ASR completed [$activeCueId]: $transcript")
+                    if (transcript.isNotBlank()) {
+                        if (committedOriginal.isNotEmpty()) committedOriginal.append(' ')
+                        committedOriginal.append(transcript)
+                        currentTurnOriginal.setLength(0)
+                        if (partialTranslated.isNotEmpty()) {
+                            emitCurrentCue(isPartial = true)
+                        }
                     }
                 }
                 "response.text.delta", "response.audio_transcript.delta", "response.output_text.delta" -> {
                     val delta = evt.optString("delta", "").ifEmpty { evt.optString("text", "") }
                     if (delta.isNotEmpty()) {
-                        if (shouldSplitByTranslation(partialTranslated.toString())) {
+                        val now = SystemClock.elapsedRealtime()
+                        val pauseSinceLastDelta = if (lastDeltaElapsedMs > 0L) now - lastDeltaElapsedMs else 0L
+                        if (shouldSplitByTranslation(partialTranslated.toString()) ||
+                            (pauseSinceLastDelta > 2800L && partialTranslated.length >= 10)
+                        ) {
                             finalizeCurrentSentence()
                         }
+                        lastDeltaElapsedMs = now
                         ensureSpeechAnchor()
                         partialTranslated.append(delta)
                         Log.i(TAG, "Translation delta [$activeCueId, pts=${currentSpeechAudioPtsMs}ms]: '${partialTranslated}'")
@@ -723,6 +743,7 @@ class RealtimeWsEngine(
                 "response.text.text", "response.audio_transcript.text" -> {
                     val full = (evt.optString("text", "") + evt.optString("stash", "")).trim()
                     if (full.isNotEmpty()) {
+                        lastDeltaElapsedMs = SystemClock.elapsedRealtime()
                         ensureSpeechAnchor()
                         partialTranslated.setLength(0)
                         partialTranslated.append(full)
@@ -734,7 +755,12 @@ class RealtimeWsEngine(
                     lastActivityOrCommitMs = SystemClock.elapsedRealtime()
                     Log.i(TAG, "Inference unit finished [$activeCueId]: '${partialTranslated}'")
                     if (partialTranslated.isNotEmpty()) {
-                        finalizeCurrentSentence()
+                        if (shouldFinalizeOnBoundary(partialTranslated.toString())) {
+                            finalizeCurrentSentence()
+                        } else {
+                            // 未达长句翻篇阈值：在同一卡片内原地更新定稿状态，继续流式拼接下一语义单元
+                            emitCurrentCue(isPartial = false)
+                        }
                     }
                 }
                 "response.output_item.done", "response.content_part.done",
@@ -743,9 +769,12 @@ class RealtimeWsEngine(
                     lastActivityOrCommitMs = SystemClock.elapsedRealtime()
                     Log.i(TAG, "Response turn done [$type, $activeCueId]")
                     if (partialTranslated.isNotEmpty()) {
-                        finalizeCurrentSentence()
-                    } else {
-                        partialOriginal.setLength(0)
+                        if (shouldFinalizeOnBoundary(partialTranslated.toString())) {
+                            finalizeCurrentSentence()
+                        } else {
+                            emitCurrentCue(isPartial = false)
+                        }
+                    } else if (committedOriginal.isEmpty() && currentTurnOriginal.isEmpty()) {
                         hasSpeechAnchor = false
                     }
                 }
@@ -765,28 +794,43 @@ class RealtimeWsEngine(
         }
     }
 
+    /**
+     * 流式输出过程中的长句切分判定：
+     * - 满 24 字且末尾为句末强标点（。！？；）时切分；
+     * - 满 36 字且末尾为逗号/空格等弱边界时切分；
+     * - 满 46 字强制切分，防止超出 3 行显示上限。
+     */
     private fun shouldSplitByTranslation(transText: String): Boolean {
         val trans = transText.trimEnd()
-        if (trans.length >= 4) {
-            val lastChar = trans.last()
-            if (lastChar == '。' || lastChar == '！' || lastChar == '？' || lastChar == '；') {
-                return true
-            }
+        if (trans.isEmpty()) return false
+        val lastChar = trans.last()
+        if (trans.length >= 24 && (lastChar == '。' || lastChar == '！' || lastChar == '？' || lastChar == '；' || lastChar == '.' || lastChar == '!' || lastChar == '?')) {
+            return true
         }
-        if (trans.length >= 24) {
-            val lastChar = trans.last()
-            if (lastChar == '，' || lastChar == ',' || lastChar == ' ') {
-                return true
-            }
+        if (trans.length >= 36 && (lastChar == '，' || lastChar == ',' || lastChar == ' ' || lastChar == '、')) {
+            return true
         }
-        return false
+        return trans.length >= 46
     }
 
     /**
-     * 将当前累积的短句定稿发送至上屏队列，并安全推进下一短句的音频 PTS 锚点。
+     * 推理单元结束（inference_unit_finished / response.done）时的翻篇判定：
+     * - 若已累积满 18 字且以句末标点结束，或总长度已达 24 字以上，则正式切分翻篇；
+     * - 否则保留当前卡片继续流式追加后续短句，组装成完整大段长字幕。
+     */
+    private fun shouldFinalizeOnBoundary(transText: String): Boolean {
+        val trans = transText.trimEnd()
+        if (trans.isEmpty()) return false
+        val lastChar = trans.last()
+        val endsWithPeriod = lastChar == '。' || lastChar == '！' || lastChar == '？' || lastChar == '；' || lastChar == '.' || lastChar == '!' || lastChar == '?'
+        return (trans.length >= 18 && endsWithPeriod) || trans.length >= 24
+    }
+
+    /**
+     * 将当前累积的完整长句定稿发送至上屏队列，并推进下一长句的音频 PTS 锚点。
      */
     private fun finalizeCurrentSentence() {
-        val orig = if (config.showOriginal) partialOriginal.toString().trim() else ""
+        val orig = if (config.showOriginal) buildFullOriginal() else ""
         val trans = partialTranslated.toString().trim()
         if (orig.isNotEmpty() || trans.isNotEmpty()) {
             ensureSpeechAnchor()
@@ -797,22 +841,23 @@ class RealtimeWsEngine(
                     translatedText = trans,
                     audioStartElapsedMs = currentSpeechStartElapsedMs,
                     audioPtsMs = currentSpeechAudioPtsMs,
-                    audioDurationMs = 3500L,
+                    audioDurationMs = 5500L,
                     isPartial = false,
                 ),
             )
         }
-        partialOriginal.setLength(0)
+        committedOriginal.setLength(0)
+        currentTurnOriginal.setLength(0)
         partialTranslated.setLength(0)
         activeCueId = "rt-${cueCounter.getAndIncrement()}"
         hasSpeechAnchor = false
-        // 为连续长语音的下一句预置合理的最低起始 PTS（不倒退）
-        currentSpeechAudioPtsMs = (latestFedAudioPtsMs - 800L).coerceAtLeast(currentSpeechAudioPtsMs + 300L)
+        // 为连续长语音的下一大句预置合理的最低起始 PTS（不倒退）
+        currentSpeechAudioPtsMs = (latestFedAudioPtsMs - 600L).coerceAtLeast(currentSpeechAudioPtsMs + 500L)
         currentSpeechStartElapsedMs = SystemClock.elapsedRealtime()
     }
 
     private fun emitCurrentCue(isPartial: Boolean) {
-        val orig = if (config.showOriginal) partialOriginal.toString().trim() else ""
+        val orig = if (config.showOriginal) buildFullOriginal() else ""
         val trans = partialTranslated.toString().trim()
         if (orig.isEmpty() && trans.isEmpty()) return
 
@@ -824,7 +869,7 @@ class RealtimeWsEngine(
                 translatedText = trans,
                 audioStartElapsedMs = currentSpeechStartElapsedMs,
                 audioPtsMs = currentSpeechAudioPtsMs,
-                audioDurationMs = 3500L,
+                audioDurationMs = 5500L,
                 isPartial = isPartial,
             ),
         )

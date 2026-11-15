@@ -47,6 +47,28 @@ Serial Number, Device IDs and Signature)**.
 This is an **open-source** project — the code is original (not derived from any other app) and was
 **built with the help of AI**.
 
+---
+
+## 🚀 OwnTV Mobile 功能更新说明 (v1.2.0-ai)
+
+**OwnTV Mobile (`v1.2.0-ai`)** 现已完整移植并同步 TV 端的 **AI 实时同传双语字幕系统（AI Live Subtitle）**，在手机与平板端提供一致的跨语种直播观看体验：
+
+### 🧠 1. 大段完整长字幕模式（Paragraph Semantic Unit）
+- **流式语义合并**：将连续短句在同一个字幕卡片内平滑延伸合并为 **22~42 字的完整语义长句**，消除短字幕频繁跳动、翻篇过快或排队滞后的问题。
+- **三行自适应排版**：支持原文与译文最多 **3 行折行显示**（画中画 PiP 模式自动紧凑化），译文超过 26 字时自动微调字号缩放（`90%`），确保竖屏与横屏全屏下均清晰易读。
+- **长句保底驻留与平滑让位**：标准保底驻留 **4.5 秒**，下一大段长句译出满 8 字时支持 **2.8 秒平滑让位**，静音停顿 **10.0 秒** 平滑消隐。
+
+### ⏱️ 2. 双模式音频采集与 60 秒音频 PTS 时间轴同步
+- **三种采集模式自由切换**：
+  - **智能自适应 (Auto)**：自动检测直播源单连接限制，智能在“后台超前探路”与“主播放器直采”间无感切换。
+  - **强制延迟探路 (Standalone Lead Scout)**：后台超前拉流提取音频并建立 **60 秒环形 PTS 时间轴**，彻底消除 AI 网络推理延迟。
+  - **单连接直采保活 (Direct Tap Mode)**：通过 `TapForwardingAudioSink` 旁路复制主播放器 PCM 音频流，**零额外网络连接**，完美兼容严苛的单连接 IPTV 源，避免断流或封号。
+- **触控时序校准面板**：在播放器底部 AI 字幕设置面板（BottomSheet）中内置 **`-2.0s` / `-0.5s` / `重置` / `+0.5s` / `+2.0s`** 快捷校准按钮及 **`立即对齐当前语音`** 按钮，主画面缓冲时自动冻结字幕时钟。
+
+### 🌐 3. 多模型预设与触控快捷配置
+- **内置主流同传服务商预设**：一键切换阿里云百炼（`qwen3.8-livetranslate-flash-realtime` 实时 WebSocket 同传）、OpenAI、Gemini、智谱 GLM 与 TVGO。
+- **手机端原生直填 API Key 与局域网 Web 配置双支持**：既可在播放器设置弹窗中直接粘贴 API Key、调节字号与背景透明度，也可通过内置 `:8964` Web 面板配置。
+
 > ### 📖 New here? **[User Guide →](extras/USER_GUIDE.md)**
 > Every feature, where to find it, and the gestures — on one page.
 
